@@ -114,9 +114,10 @@ module FHIR
       @use_oauth2_auth = false
       @use_basic_auth = false
       @security_headers = {}
-      @client = RestClient
-      @client.proxy = proxy unless proxy.nil?
-      @client
+      #@client = RestClient
+      #@client.proxy = proxy unless proxy.nil?
+      #@client
+      @client = RestClient::Request
     end
 
     # Set the client to use HTTP Basic Authentication
@@ -127,9 +128,10 @@ module FHIR
       @security_headers = { 'Authorization' => value }
       @use_oauth2_auth = false
       @use_basic_auth = true
-      @client = RestClient
-      @client.proxy = proxy unless proxy.nil?
-      @client
+      #@client = RestClient
+      #@client.proxy = proxy unless proxy.nil?
+      #@client
+      @client = RestClient::Request
     end
 
     # Set the client to use Bearer Token Authentication
@@ -139,9 +141,10 @@ module FHIR
       @security_headers = { 'Authorization' => value }
       @use_oauth2_auth = false
       @use_basic_auth = true
-      @client = RestClient
-      @client.proxy = proxy unless proxy.nil?
-      @client
+      #@client = RestClient
+      #@client.proxy = proxy unless proxy.nil?
+      #client
+      @client = RestClient::Request
     end
 
     # Set the client to use OpenID Connect OAuth2 Authentication
@@ -430,7 +433,13 @@ module FHIR
       if @use_oauth2_auth
         # @client.refresh!
         begin
-          response = @client.get(url, headers: headers)
+          #response = @client.get(url, headers: headers)
+          response = @client.Request.execute(
+            :url => url, 
+            :method => :get, 
+            :headers => headers,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+          )               
         rescue => e
           if !e.respond_to?(:response) || e.response.nil?
             # Re-raise the client error if there's no response. Otherwise, logging
@@ -461,9 +470,15 @@ module FHIR
       else
         headers.merge!(@security_headers) if @use_basic_auth
         begin
-          response = @client.get(url, headers)
+          #response = @client.get(url, headers)
+          response = @client.Request.execute(
+            :url => url, 
+            :method => :get, 
+            :headers => headers,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+          )               
         rescue RestClient::SSLCertificateNotVerified => sslerr
-          FHIR.logger.error "SSL Error: #{url}"
+          FHIR.logger.error "SSL Error: #{sslerr}"
           req = {
             method: :get,
             url: url,
@@ -512,7 +527,14 @@ module FHIR
       if @use_oauth2_auth
         # @client.refresh!
         begin
-          response = @client.post(url, headers: headers, body: payload)
+          #response = @client.post(url, headers: headers, body: payload)
+          response = @client.Request.execute(
+            :url => url, 
+            :method => :post, 
+            :headers => headers,
+            :payload => payload,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+          )
         rescue => e
           if !e.respond_to?(:response) || e.response.nil?
             # Re-raise the client error if there's no response. Otherwise, logging
@@ -538,7 +560,14 @@ module FHIR
         @reply = FHIR::ClientReply.new(req, res, self)
       else
         headers.merge!(@security_headers) if @use_basic_auth
-        @client.post(url, payload, headers) do |resp, request, result|
+        #@client.post(url, payload, headers) do |resp, request, result|
+        @client.Request.execute(
+            :url => url, 
+            :method => :post, 
+            :headers => headers,
+            :body => payload,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+        ) do |resp, request, result|               
           FHIR.logger.debug "POST - Request: #{request.to_json}\nResponse:\nResponse Headers: #{scrubbed_response_headers(result.each_key {})} \nResponse Body: #{resp.force_encoding('UTF-8')}"
           request.args[:path] = url.gsub(@base_service_url, '')
           res = {
@@ -559,7 +588,14 @@ module FHIR
       if @use_oauth2_auth
         # @client.refresh!
         begin
-          response = @client.put(url, headers: headers, body: payload)
+          #response = @client.put(url, headers: headers, body: payload)
+          response = @client.Request.execute(
+            :url => url, 
+            :method => :put, 
+            :headers => headers,
+            :payload => payload,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+          )                         
         rescue => e
           if !e.respond_to?(:response) || e.response.nil?
             # Re-raise the client error if there's no response. Otherwise, logging
@@ -585,7 +621,14 @@ module FHIR
         @reply = FHIR::ClientReply.new(req, res, self)
       else
         headers.merge!(@security_headers) if @use_basic_auth
-        @client.put(url, payload, headers) do |resp, request, result|
+        #@client.put(url, payload, headers) do |resp, request, result|
+          @client.Request.execute(
+            :url => url, 
+            :method => :put, 
+            :headers => headers,
+            :payload => payload,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+          ) do |resp, request, result|               
           FHIR.logger.debug "PUT - Request: #{request.to_json}, Response: #{resp.force_encoding('UTF-8')}"
           request.args[:path] = url.gsub(@base_service_url, '')
           res = {
@@ -606,7 +649,14 @@ module FHIR
       if @use_oauth2_auth
         # @client.refresh!
         begin
-          response = @client.patch(url, headers: headers, body: payload)
+          #response = @client.patch(url, headers: headers, body: payload)
+          response = @client.Request.execute(
+            :url => url, 
+            :method => :patch, 
+            :headers => headers,
+            :payload => payload,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+          ) 
         rescue => e
           if !e.respond_to?(:response) || e.response.nil?
             # Re-raise the client error if there's no response. Otherwise, logging
@@ -633,7 +683,14 @@ module FHIR
       else
         headers.merge!(@security_headers) if @use_basic_auth
         begin
-          @client.patch(url, payload, headers) do |resp, request, result|
+          #@client.patch(url, payload, headers) do |resp, request, result|
+            @client.Request.execute(
+              :url => url, 
+              :method => :post, 
+              :headers => headers,
+              :payload => payload,
+              :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+            )  do |resp, request, result|
             FHIR.logger.debug "PATCH - Request: #{request.to_json}, Response: #{resp.force_encoding('UTF-8')}"
             request.args[:path] = url.gsub(@base_service_url, '')
             res = {
@@ -674,7 +731,13 @@ module FHIR
       if @use_oauth2_auth
         # @client.refresh!
         begin
-          response = @client.delete(url, headers: headers)
+          #response = @client.delete(url, headers: headers)
+          response = @client.Request.execute(
+            :url => url, 
+            :method => :delete, 
+            :headers => headers,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+          )
         rescue => e
           if !e.respond_to?(:response) || e.response.nil?
             # Re-raise the client error if there's no response. Otherwise, logging
@@ -700,7 +763,13 @@ module FHIR
         @reply = FHIR::ClientReply.new(req, res, self)
       else
         headers.merge!(@security_headers) if @use_basic_auth
-        @client.delete(url, headers) do |resp, request, result|
+        #@client.delete(url, headers) do |resp, request, result|
+        @client.Request.execute(
+            :url => url, 
+            :method => :delete, 
+            :headers => headers,
+            :verify_ssl => OpenSSL::SSL::VERIFY_NONE
+        ) do |resp, request, result|         
           FHIR.logger.debug "DELETE - Request: #{request.to_json}, Response: #{resp.force_encoding('UTF-8')}"
           request.args[:path] = url.gsub(@base_service_url, '')
           res = {
